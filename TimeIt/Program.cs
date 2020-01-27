@@ -41,23 +41,7 @@ namespace TimeIt
         /// </summary>
         /// <param name="fileTime">WinAPi filetime.</param>
         /// <returns>Converted ticks.</returns>
-        static long ComFileTimeToTicks(System.Runtime.InteropServices.ComTypes.FILETIME fileTime)
-        {
-            long ticks;
-            // Convert 4 high-order bytes to a byte array
-            byte[] highBytes = BitConverter.GetBytes(fileTime.dwHighDateTime);
-            // Resize the array to 8 bytes (for a Long)
-            Array.Resize(ref highBytes, 8);
-
-            // Assign high-order bytes to first 4 bytes of Long
-            ticks = BitConverter.ToInt64(highBytes, 0);
-            // Shift high-order bytes into position
-            ticks <<= 32;
-            // Or with low-order bytes
-            ticks |= (uint)fileTime.dwLowDateTime;
-            // Return long 
-            return ticks;
-        }
+        static long ComFileTimeToTicks(System.Runtime.InteropServices.ComTypes.FILETIME fileTime) => (((long)fileTime.dwHighDateTime) << 32) | unchecked((uint)fileTime.dwLowDateTime);
 
         /// <summary>
         /// Tries to query measured process times.
@@ -202,7 +186,7 @@ namespace TimeIt
                 logBuilder.Append(processFile).Append(' ').Append(arguments).Append('\n');
                 logBuilder.Append(times);
                 WriteToLogFile(logBuilder.ToString());
-                ColoredPrint(   times, ConsoleColor.DarkGreen);
+                ColoredPrint(times, ConsoleColor.DarkGreen);
             }
         }
 

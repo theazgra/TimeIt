@@ -11,9 +11,10 @@ namespace TestApp
             while (true)
             {
                 Console.WriteLine("TestApp output");
-                if ((++counter % 5) == 0)
+                if ((++counter % 2) == 0)
                 {
                     Console.Error.WriteLine("TestApp error output.");
+
                     break;
                 }
                 Thread.Sleep(1000);
