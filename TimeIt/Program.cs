@@ -155,7 +155,7 @@ namespace TimeIt
                 lock (m_lock)
                 {
                     Console.ForegroundColor = ConsoleColor.Red;
-                    Console.WriteLine("stderr: " + e.Data);
+                    Console.Error.WriteLine("stderr: " + e.Data);
                     Console.ForegroundColor = originalColor;
                 }
             }
