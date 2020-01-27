@@ -9,8 +9,25 @@ namespace TimeIt
 {
     class Program
     {
+        /// <summary>
+        /// Console print lock. We synchronize stdout and stderr output because of diffrent foreground color.
+        /// </summary>
         private static object m_lock = new object();
 
+        /// <summary>
+        /// Measured child process.
+        /// </summary>
+        private static Process m_childProcess = null;
+
+        /// <summary>
+        /// Get process times.
+        /// </summary>
+        /// <param name="hProcess">Process handle</param>
+        /// <param name="lpCreationTime">Creation time of the measured process.</param>
+        /// <param name="lpExitTime">Exit time of the measured process.</param>
+        /// <param name="lpKernelTime">Kernel time of the measured process.</param>
+        /// <param name="lpUserTime">User time of the measured process.</param>
+        /// <returns></returns>
         [DllImport("kernel32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
         static extern bool GetProcessTimes(IntPtr hProcess,
@@ -19,6 +36,11 @@ namespace TimeIt
                                            out System.Runtime.InteropServices.ComTypes.FILETIME lpKernelTime,
                                            out System.Runtime.InteropServices.ComTypes.FILETIME lpUserTime);
 
+        /// <summary>
+        /// Convert <see cref="System.Runtime.InteropServices.ComTypes.FILETIME"/> to ticks.
+        /// </summary>
+        /// <param name="fileTime">WinAPi filetime.</param>
+        /// <returns>Converted ticks.</returns>
         static long ComFileTimeToTicks(System.Runtime.InteropServices.ComTypes.FILETIME fileTime)
         {
             long ticks;
@@ -37,53 +59,59 @@ namespace TimeIt
             return ticks;
         }
 
-        static string GetProcessTimesString(Process process)
+        /// <summary>
+        /// Tries to query measured process times.
+        /// </summary>
+        /// <param name="process">Measured process handle.</param>
+        /// <param name="processTimes">Measured process times.</param>
+        /// <returns>True if received the process times.</returns>
+        static bool TryGetProcessTimes(Process process, out ProcessTimes processTimes)
         {
+            processTimes = new ProcessTimes();
+
             System.Runtime.InteropServices.ComTypes.FILETIME lpCreationTime, lpExitTime, lpKernel, lpUser;
 
             bool result = GetProcessTimes(process.Handle, out lpCreationTime, out lpExitTime, out lpKernel, out lpUser);
             if (!result)
             {
                 Console.Error.WriteLine("Unable to query process time.");
-                return string.Empty;
+                return false;
             }
 
             DateTime creation = DateTime.FromFileTime(ComFileTimeToTicks(lpCreationTime));
             DateTime exit = DateTime.FromFileTime(ComFileTimeToTicks(lpExitTime));
 
-            TimeSpan kernelTime = TimeSpan.FromTicks(ComFileTimeToTicks(lpKernel));
-            TimeSpan userTime = TimeSpan.FromTicks(ComFileTimeToTicks(lpUser));
-            TimeSpan wallTime = exit - creation;
+            processTimes.wallTime = (exit - creation);
+            processTimes.kernelTime = TimeSpan.FromTicks(ComFileTimeToTicks(lpKernel));
+            processTimes.userTime = TimeSpan.FromTicks(ComFileTimeToTicks(lpUser));
+            return true;
+        }
 
-            bool hour = (wallTime.Hours > 0) || (kernelTime.Hours > 0) || (userTime.Hours > 0);
-            bool minute = (wallTime.Minutes > 0) || (kernelTime.Minutes > 0) || (userTime.Minutes > 0);
-
+        /// <summary>
+        /// Format measured process times to string.
+        /// </summary>
+        /// <param name="processTimes">Mesured process times.</param>
+        /// <returns>Formatted string of measured times.</returns>
+        static string FormatProcessTimes(ProcessTimes processTimes)
+        {
             StringBuilder sb = new StringBuilder();
+            sb.Append('\n');
+            const string formatString = "{0}h {1}min {2}sec {3} ms";
+            sb.AppendLine("Wall time:\t" + string.Format(formatString, processTimes.wallTime.Hours, processTimes.wallTime.Minutes,
+                                                         processTimes.wallTime.Seconds, processTimes.wallTime.Milliseconds));
 
-            if (hour)
-            {
-                const string formatString = "{0}h {1}min {2}sec {3} ms";
-                sb.AppendLine("Wall time:\t" + string.Format(formatString, wallTime.Hours, wallTime.Minutes, wallTime.Seconds, wallTime.Milliseconds));
-                sb.AppendLine("Kernel time:\t" + string.Format(formatString, kernelTime.Hours, kernelTime.Minutes, kernelTime.Seconds, kernelTime.Milliseconds));
-                sb.AppendLine("User time:\t" + string.Format(formatString, userTime.Hours, userTime.Minutes, userTime.Seconds, userTime.Milliseconds));
-            }
-            else if (minute)
-            {
-                const string formatString = "{0}min {1}sec {2}ms";
-                sb.AppendLine("Wall time:\t" + string.Format(formatString, wallTime.Minutes, wallTime.Seconds, wallTime.Milliseconds));
-                sb.AppendLine("Kernel time:\t" + string.Format(formatString, kernelTime.Minutes, kernelTime.Seconds, kernelTime.Milliseconds));
-                sb.AppendLine("User time:\t" + string.Format(formatString, userTime.Minutes, userTime.Seconds, userTime.Milliseconds));
-            }
-            else
-            {
-                const string formatString = "{0}sec {1}ms";
-                sb.AppendLine("Wall time:\t" + string.Format(formatString, wallTime.Seconds, wallTime.Milliseconds));
-                sb.AppendLine("Kernel time:\t" + string.Format(formatString, kernelTime.Seconds, kernelTime.Milliseconds));
-                sb.AppendLine("User time:\t" + string.Format(formatString, userTime.Seconds, userTime.Milliseconds));
-            }
+            sb.AppendLine("Kernel time:\t" + string.Format(formatString, processTimes.kernelTime.Hours, processTimes.kernelTime.Minutes,
+                                                           processTimes.kernelTime.Seconds, processTimes.kernelTime.Milliseconds));
+
+            sb.AppendLine("User time:\t" + string.Format(formatString, processTimes.userTime.Hours, processTimes.userTime.Minutes,
+                                                         processTimes.userTime.Seconds, processTimes.userTime.Milliseconds));
             return sb.ToString();
         }
 
+        /// <summary>
+        /// Append message to the log file.
+        /// </summary>
+        /// <param name="msg">Message to append.</param>
         static void WriteToLogFile(string msg)
         {
             string logFile = Path.Combine(Directory.GetCurrentDirectory(), "TimeItLog.txt");
@@ -94,19 +122,52 @@ namespace TimeIt
             }
         }
 
+        /// <summary>
+        /// Print message to stdout with selected foreground color and then revert to original color.
+        /// </summary>
+        /// <param name="message">Message to print.</param>
+        /// <param name="color">Foreground color.</param>
+        /// <param name="error">True if write to stderr.</param>
+        static void ColoredPrint(string message, ConsoleColor color, bool error = false)
+        {
+            var originalColor = Console.ForegroundColor;
+            Console.ForegroundColor = color;
+            try
+            {
+                if (error)
+                    Console.Error.WriteLine(message);
+                else
+                    Console.WriteLine(message);
+            }
+            finally
+            {
+                Console.ForegroundColor = originalColor;
+            }
+
+        }
+
         static void Main(string[] args)
         {
+            // Check that we have received the process filename.
             if (args.Length < 1)
             {
-                Console.Error.WriteLine("TimeIt.exe filename [arguments]");
+                ColoredPrint("TimeIt.exe filename [arguments]", ConsoleColor.Red, true);
                 return;
             }
-            StringBuilder logBuilder = new StringBuilder();
 
+            // First argument is process file.
             string processFile = args[0];
+            // Rest of arguments is to be passed to the created process.
             string arguments = string.Join(" ", args.Skip(1));
-            logBuilder.Append(processFile).Append(' ').Append(arguments).Append('\n');
 
+            // Check that process file realy exist.
+            if (!File.Exists(processFile))
+            {
+                ColoredPrint("Process file doesn't exist.", ConsoleColor.Red, true);
+                return;
+            }
+
+            // Dont create new window and redirect outputs.
             ProcessStartInfo startInfo = new ProcessStartInfo(processFile, arguments)
             {
                 CreateNoWindow = true,
@@ -115,48 +176,64 @@ namespace TimeIt
                 RedirectStandardError = true
             };
 
-            Process process = new Process()
+            // Create child process.
+            m_childProcess = new Process() { StartInfo = startInfo };
+
+            // Handle cancelation, kill the child process.
+            Console.CancelKeyPress += KillMeasuredProcess;
+
+            // Handle stdout and stderr streams.
+            m_childProcess.OutputDataReceived += PrintMeasuredProcessStdout;
+            m_childProcess.ErrorDataReceived += PrintMeasuredProcessStderr;
+
+            // Start the measured process and begin reading of stdout, stderr.
+            m_childProcess.Start();
+            m_childProcess.BeginOutputReadLine();
+            m_childProcess.BeginErrorReadLine();
+
+            // Wait until measured process exits.
+            m_childProcess.WaitForExit();
+
+            // Query measured process times and log them.
+            if (TryGetProcessTimes(m_childProcess, out ProcessTimes processTimes))
             {
-                StartInfo = startInfo,
-            };
-
-            process.ErrorDataReceived += Process_ErrorDataReceived;
-            process.OutputDataReceived += Process_OutputDataReceived;
-
-            process.Start();
-            process.BeginErrorReadLine();
-            process.BeginOutputReadLine();
-
-            process.WaitForExit();
-
-            string times = GetProcessTimesString(process);
-            logBuilder.Append(times);
-            WriteToLogFile(logBuilder.ToString());
-            Console.WriteLine(times);
-        }
-
-        private static void Process_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            if (!string.IsNullOrWhiteSpace(e.Data))
-            {
-                lock (m_lock)
-                {
-                    Console.WriteLine("stdout: " + e.Data);
-                }
-
+                string times = FormatProcessTimes(processTimes);
+                StringBuilder logBuilder = new StringBuilder();
+                logBuilder.Append(processFile).Append(' ').Append(arguments).Append('\n');
+                logBuilder.Append(times);
+                WriteToLogFile(logBuilder.ToString());
+                ColoredPrint(   times, ConsoleColor.DarkGreen);
             }
         }
 
-        private static void Process_ErrorDataReceived(object sender, DataReceivedEventArgs e)
+        private static void KillMeasuredProcess(object sender, ConsoleCancelEventArgs e)
+        {
+            if (m_childProcess != null)
+            {
+                ColoredPrint("Cancelation request received, killing the child process...", ConsoleColor.Red, true);
+                Console.WriteLine();
+                m_childProcess.Kill();
+            }
+        }
+
+        private static void PrintMeasuredProcessStdout(object sender, DataReceivedEventArgs e)
         {
             if (!string.IsNullOrWhiteSpace(e.Data))
             {
-                var originalColor = Console.ForegroundColor;
                 lock (m_lock)
                 {
-                    Console.ForegroundColor = ConsoleColor.Red;
-                    Console.Error.WriteLine("stderr: " + e.Data);
-                    Console.ForegroundColor = originalColor;
+                    Console.WriteLine(e.Data);
+                }
+            }
+        }
+
+        private static void PrintMeasuredProcessStderr(object sender, DataReceivedEventArgs e)
+        {
+            if (!string.IsNullOrWhiteSpace(e.Data))
+            {
+                lock (m_lock)
+                {
+                    ColoredPrint(e.Data, ConsoleColor.Red, true);
                 }
             }
         }
