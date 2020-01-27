@@ -211,7 +211,6 @@ namespace TimeIt
             if (m_childProcess != null)
             {
                 ColoredPrint("Cancelation request received, killing the child process...", ConsoleColor.Red, true);
-                Console.WriteLine();
                 m_childProcess.Kill();
             }
         }
