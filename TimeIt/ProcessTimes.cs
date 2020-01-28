@@ -7,16 +7,16 @@ namespace TimeIt
         /// <summary>
         /// Total wall time of the measured process.
         /// </summary>
-        internal TimeSpan wallTime;
+        internal PreciseTimeSpan wallTime;
 
         /// <summary>
         /// Process time spent in kernel mode.
         /// </summary>
-        internal TimeSpan kernelTime;
+        internal PreciseTimeSpan kernelTime;
 
         /// <summary>
         /// Process time spent in user mode.
         /// </summary>
-        internal TimeSpan userTime;
+        internal PreciseTimeSpan userTime;
     }
 }

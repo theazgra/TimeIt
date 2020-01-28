@@ -65,9 +65,9 @@ namespace TimeIt
             DateTime creation = DateTime.FromFileTime(ComFileTimeToTicks(lpCreationTime));
             DateTime exit = DateTime.FromFileTime(ComFileTimeToTicks(lpExitTime));
 
-            processTimes.wallTime = (exit - creation);
-            processTimes.kernelTime = TimeSpan.FromTicks(ComFileTimeToTicks(lpKernel));
-            processTimes.userTime = TimeSpan.FromTicks(ComFileTimeToTicks(lpUser));
+            processTimes.wallTime = PreciseTimeSpan.FromTicks((exit - creation).Ticks);
+            processTimes.kernelTime = PreciseTimeSpan.FromTicks(ComFileTimeToTicks(lpKernel));
+            processTimes.userTime = PreciseTimeSpan.FromTicks(ComFileTimeToTicks(lpUser));
             return true;
         }
 
@@ -80,15 +80,18 @@ namespace TimeIt
         {
             StringBuilder sb = new StringBuilder();
             sb.Append('\n');
-            const string formatString = "{0}h {1}min {2}sec {3} ms";
+            const string formatString = "{0}h {1}min {2}sec {3} ms {4} ns";
             sb.AppendLine("Wall time:\t" + string.Format(formatString, processTimes.wallTime.Hours, processTimes.wallTime.Minutes,
-                                                         processTimes.wallTime.Seconds, processTimes.wallTime.Milliseconds));
+                                                         processTimes.wallTime.Seconds, processTimes.wallTime.Milliseconds,
+                                                         processTimes.wallTime.Nanoseconds));
 
             sb.AppendLine("Kernel time:\t" + string.Format(formatString, processTimes.kernelTime.Hours, processTimes.kernelTime.Minutes,
-                                                           processTimes.kernelTime.Seconds, processTimes.kernelTime.Milliseconds));
+                                                           processTimes.kernelTime.Seconds, processTimes.kernelTime.Milliseconds,
+                                                           processTimes.kernelTime.Nanoseconds));
 
             sb.AppendLine("User time:\t" + string.Format(formatString, processTimes.userTime.Hours, processTimes.userTime.Minutes,
-                                                         processTimes.userTime.Seconds, processTimes.userTime.Milliseconds));
+                                                         processTimes.userTime.Seconds, processTimes.userTime.Milliseconds,
+                                                         processTimes.userTime.Nanoseconds));
             return sb.ToString();
         }
 
