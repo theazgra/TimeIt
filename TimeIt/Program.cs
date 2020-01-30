@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -133,6 +134,31 @@ namespace TimeIt
 
         }
 
+        /// <summary>
+        /// Kill process tree.
+        /// </summary>
+        /// <param name="pid">The parent process Id.</param>
+        static void KillProcessTree(int pid)
+        {
+            ManagementObjectSearcher processSearcher = new ManagementObjectSearcher($"SELECT * FROM Win32_Process WHERE ParentProcessID={pid}");
+            var childrenObjects = processSearcher.Get();
+            foreach (var child in childrenObjects)
+            {
+                int childProcessId = Convert.ToInt32(child["ProcessID"]);
+                KillProcessTree(childProcessId);
+            }
+            try
+            {
+                Process process = Process.GetProcessById(pid);
+                //ColoredPrint($"Killing process {process.Id}:{process.ProcessName}", ConsoleColor.Red, true);
+                process.Kill();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EXCEPTION: " + e.Message);
+            }
+        }
+
         static void Main(string[] args)
         {
             // Check that we have received the process filename.
@@ -197,8 +223,8 @@ namespace TimeIt
         {
             if (m_childProcess != null)
             {
-                ColoredPrint("Cancelation request received, killing the child process...", ConsoleColor.Red, true);
-                m_childProcess.Kill();
+                ColoredPrint("Cancelation request received, killing the child process tree...", ConsoleColor.Red, true);
+                KillProcessTree(m_childProcess.Id);
             }
         }
 
