@@ -11,9 +11,14 @@ namespace TimeIt
     class Program
     {
         /// <summary>
+        /// Siletion options. If enabled, stdout and stderr won't be redirected.
+        /// </summary>
+        const string SilentOption = "-s";
+
+        /// <summary>
         /// Console print lock. We synchronize stdout and stderr output because of diffrent foreground color.
         /// </summary>
-        private static object m_lock = new object();
+        private static readonly object m_lock = new object();
 
         /// <summary>
         /// Measured child process.
@@ -161,6 +166,8 @@ namespace TimeIt
 
         static void Main(string[] args)
         {
+            bool silent = false;
+            int offset = 0;
             // Check that we have received the process filename.
             if (args.Length < 1)
             {
@@ -168,10 +175,16 @@ namespace TimeIt
                 return;
             }
 
+            if (args[0] == SilentOption)
+            {
+                silent = true;
+                offset = 1;
+            }
+
             // First argument is process file.
-            string processFile = args[0];
+            string processFile = args[0 + offset];
             // Rest of arguments is to be passed to the created process.
-            string arguments = string.Join(" ", args.Skip(1));
+            string arguments = string.Join(" ", args.Skip(1 + offset));
 
             // Check that process file realy exist.
             if (!File.Exists(processFile))
@@ -185,8 +198,8 @@ namespace TimeIt
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true
+                RedirectStandardOutput = !silent,
+                RedirectStandardError = !silent
             };
 
             // Create child process.
@@ -201,8 +214,12 @@ namespace TimeIt
 
             // Start the measured process and begin reading of stdout, stderr.
             m_childProcess.Start();
-            m_childProcess.BeginOutputReadLine();
-            m_childProcess.BeginErrorReadLine();
+            
+            if (!silent)
+            {
+                m_childProcess.BeginOutputReadLine();
+                m_childProcess.BeginErrorReadLine();
+            }
 
             // Wait until measured process exits.
             m_childProcess.WaitForExit();
