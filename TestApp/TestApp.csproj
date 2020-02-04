@@ -45,4 +45,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>copy $(TargetPath) $(SolutionDir)\TimeIt\bin\Debug\
+copy $(TargetPath) $(SolutionDir)\TimeIt\bin\Release\</PostBuildEvent>
+  </PropertyGroup>
 </Project>
