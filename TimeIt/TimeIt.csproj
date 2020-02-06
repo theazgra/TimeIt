@@ -45,9 +45,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="PreciseTimeSpan.cs" />
+    <Compile Include="ProcessTimeUtil.cs" />
     <Compile Include="ProcessTimes.cs" />
+    <Compile Include="ProcessTree.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Subprocess.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

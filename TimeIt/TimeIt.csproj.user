@@ -1,12 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>TestApp.exe</StartArguments>
+    <StartArguments>notepad.exe</StartArguments>
   </PropertyGroup>
   <PropertyGroup>
     <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <StartArguments>TestApp.exe</StartArguments>
+    <StartArguments>D:\codes\git\BigDataViewer\DataCompressor\out\artifacts\DataCompressor_jar\tmp.bat -bench -vq 3x3 -wc 8 -b 7 -cbc D:\biology\benchmark\dc_cache D:\biology\tiff_data\benchmark\fused_tp_10_ch_1_16bit.raw 1041x996x946 600-620</StartArguments>
   </PropertyGroup>
 </Project>
