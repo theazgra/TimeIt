@@ -65,18 +65,26 @@ namespace TimeIt
             }
         }
 
+        static void ReportProcessTimes(ParsedOptions options, ProcessTimes pTimes)
+        {
+            string times = pTimes.FormatProcessTimes();
+            StringBuilder logBuilder = new StringBuilder();
+            logBuilder.Append(options.ProcessFile).Append(' ').Append(options.ProcessArguments).Append('\n');
+            logBuilder.Append(times);
+            WriteToLogFile(logBuilder.ToString());
+            ColoredPrint(times, ConsoleColor.DarkGreen);
+        }
+
         static void Main(string[] args)
         {
             SimpleArgParser simpleArgParser = new SimpleArgParser(args, new CliFlag[] {
                 new CliFlag('s') { HasValue = false, Description = "Silent mode" },
                 new CliFlag('n'){ HasValue = true, Description = "Measured process name" },
-                new CliFlag('i') {HasValue  = false, Description = "Interactive mode"}
+                new CliFlag('v') {HasValue  = false, Description = "Report all subprocesses"}
             });
 
-            simpleArgParser.Report();
-            return;
-            bool silent = false;
-            int offset = 0;
+            ParsedOptions options = simpleArgParser.GetParsedOptions();
+
             // Check that we have received the process filename.
             if (args.Length < 1)
             {
@@ -84,31 +92,13 @@ namespace TimeIt
                 return;
             }
 
-            if (args[0] == SilentOption)
-            {
-                silent = true;
-                offset = 1;
-            }
-
-            // First argument is process file.
-            string processFile = args[0 + offset];
-            // Rest of arguments is to be passed to the created process.
-            string arguments = string.Join(" ", args.Skip(1 + offset));
-
-            // Check that process file realy exist.
-            //if (!File.Exists(processFile))
-            //{
-            //    ColoredPrint("Process file doesn't exist.", ConsoleColor.Red, true);
-            //    return;
-            //}
-
             // Dont create new window and redirect outputs.
-            ProcessStartInfo startInfo = new ProcessStartInfo(processFile, arguments)
+            ProcessStartInfo startInfo = new ProcessStartInfo(options.ProcessFile, options.ProcessArguments)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
-                RedirectStandardOutput = !silent,
-                RedirectStandardError = !silent
+                RedirectStandardOutput = !options.Silent,
+                RedirectStandardError = !options.Silent
             };
 
             // Create child process.
@@ -124,7 +114,7 @@ namespace TimeIt
             // Start the measured process and begin reading of stdout, stderr.
             rootProcess.Start();
 
-            if (!silent)
+            if (!options.Silent)
             {
                 rootProcess.BeginOutputReadLine();
                 rootProcess.BeginErrorReadLine();
@@ -137,32 +127,29 @@ namespace TimeIt
 
             m_processTree.MeasureExecutionTimeOfTree();
 
-            //foreach (var sp in m_processTree)
-            //{
-            //    Console.WriteLine(sp.Name);
-            //    Console.WriteLine(sp.Times.FormatProcessTimes());
-            //}
-
-            //foreach (var process in subprocesses)
-            //{
-            //    ColoredPrint($"Printing info about process: {process.Item2}", ConsoleColor.DarkBlue);
-            //    // Query measured process times and log them.
-            //    if (TryGetProcessTimes(process.Item1, out ProcessTimes pt))
-            //    {
-            //        string times = FormatProcessTimes(pt);
-
-            //        ColoredPrint(times, ConsoleColor.Blue);
-            //    }
-            //}
-
+            if (options.Verbose)
             {
-                string times = m_processTree.GetOverallTreeTime().FormatProcessTimes();
-                StringBuilder logBuilder = new StringBuilder();
-                logBuilder.Append(processFile).Append(' ').Append(arguments).Append('\n');
-                logBuilder.Append(times);
-                WriteToLogFile(logBuilder.ToString());
-                ColoredPrint(times, ConsoleColor.DarkGreen);
+                foreach (SubProcess subProcess in m_processTree)
+                {
+                    string times =  $"{subProcess.Name}\n{subProcess.Times.FormatProcessTimes()}";
+                    ColoredPrint(times, ConsoleColor.DarkGreen);
+                }
             }
+            else if (options.HasMeasuredProcessName)
+            {
+                if (m_processTree.TryGetMeasuredProcess(options.MeasuredProcessName, out ProcessTimes times))
+                {
+                    ReportProcessTimes(options, times);
+                    return;
+                }
+                else
+                {
+                    ColoredPrint($"Unable to find requested process with name '{options.MeasuredProcessName}'", ConsoleColor.Red, true);
+                    return;
+                }
+            }
+
+            ReportProcessTimes(options, m_processTree.GetOverallTreeTime());
         }
 
         private static void KillMeasuredProcess(object sender, ConsoleCancelEventArgs e)

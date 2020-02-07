@@ -101,5 +101,19 @@ namespace TimeIt.ProcessUtils
         {
             return ((IEnumerable<SubProcess>)m_subProcesses).GetEnumerator();
         }
+
+        internal bool TryGetMeasuredProcess(string measuredProcessName, out ProcessTimes times)
+        {
+            foreach (var sp in m_subProcesses)
+            {
+                if (string.Equals(sp.Name, measuredProcessName, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    times = sp.Times;
+                    return true;
+                }
+            }
+            times = ProcessTimes.Zero;
+            return false;
+        }
     }
 }

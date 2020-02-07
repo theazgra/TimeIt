@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Cli\CliFlag.cs" />
+    <Compile Include="Cli\ParsedOptions.cs" />
     <Compile Include="PreciseTimeSpan.cs" />
     <Compile Include="ProcessUtils\ProcessTimeUtil.cs" />
     <Compile Include="ProcessUtils\ProcessTimes.cs" />

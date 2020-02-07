@@ -73,5 +73,19 @@ namespace TimeIt.Cli
             Console.WriteLine("ProcessFile: {0}", ProcessFile);
             Console.WriteLine("ProcessArgumets: {0}", ProcessArgumets);
         }
+
+        internal ParsedOptions GetParsedOptions()
+        {
+            ParsedOptions options = new ParsedOptions()
+            {
+                ProcessFile = this.ProcessFile,
+                ProcessArguments = this.ProcessArgumets,
+                Verbose = IsMatched('v'),
+                Silent = IsMatched('s'),
+                MeasuredProcessName = IsMatched('n') ? GetFlagValue<string>('n') : null
+            };
+            return options;
+
+        }
     }
 }

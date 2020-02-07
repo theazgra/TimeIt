@@ -1,7 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
-    <StartArguments>-n java -s -i notepad.exe a b c d 4 5 8</StartArguments>
+    <StartArguments>-v "C:\Program Files\JetBrains\IntelliJ IDEA 2019.2.3\jbr\bin\java.exe" -ea -Xmx12288M -jar D:\codes\git\BigDataViewer\DataCompressor\out\artifacts\DataCompressor_jar\DataCompressor.jar -tcb -vq 3x3 -wc 8 -o D:\tmp -b 7 -v D:/biology/tiff_data/benchmark/fused_tp_10_ch_0_16bit.raw 1041x996x946 200-203</StartArguments>
     <RemoteDebugEnabled>false</RemoteDebugEnabled>
   </PropertyGroup>
   <PropertyGroup>

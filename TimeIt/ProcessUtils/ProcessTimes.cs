@@ -19,6 +19,8 @@ namespace TimeIt.ProcessUtils
         /// </summary>
         internal readonly PreciseTimeSpan KernelTime;
 
+        public static ProcessTimes Zero => new ProcessTimes(PreciseTimeSpan.Zero, PreciseTimeSpan.Zero, PreciseTimeSpan.Zero);
+
 
         internal ProcessTimes(PreciseTimeSpan wallTime, PreciseTimeSpan userTime, PreciseTimeSpan kernelTime)
         {
@@ -26,7 +28,7 @@ namespace TimeIt.ProcessUtils
             UserTime = userTime;
             KernelTime = kernelTime;
         }
-        
+
         internal ProcessTimes(long wallTimeTicks, long userTimeTicks, long kernelTimeTicks)
         {
             WallTime = PreciseTimeSpan.FromTicks(wallTimeTicks);
@@ -42,7 +44,6 @@ namespace TimeIt.ProcessUtils
         internal string FormatProcessTimes()
         {
             StringBuilder sb = new StringBuilder();
-            sb.Append('\n');
             const string formatString = "{0}h {1}min {2}sec {3} ms {4} ns";
             sb.AppendLine("Wall time:\t" + string.Format(formatString, WallTime.Hours, WallTime.Minutes,
                                                          WallTime.Seconds, WallTime.Milliseconds,
