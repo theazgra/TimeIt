@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace TimeIt
+namespace TimeIt.ProcessUtils
 {
     internal readonly struct ProcessTimes
     {

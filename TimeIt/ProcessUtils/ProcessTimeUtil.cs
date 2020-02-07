@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 
-namespace TimeIt
+namespace TimeIt.ProcessUtils
 {
     internal static class ProcessTimeUtil
     {

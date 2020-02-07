@@ -7,7 +7,7 @@ using System.Management;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TimeIt
+namespace TimeIt.ProcessUtils
 {
     internal class ProcessTree : IEnumerable<SubProcess>
     {

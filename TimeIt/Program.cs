@@ -6,6 +6,8 @@ using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.Text;
+using TimeIt.Cli;
+using TimeIt.ProcessUtils;
 
 namespace TimeIt
 {
@@ -65,6 +67,14 @@ namespace TimeIt
 
         static void Main(string[] args)
         {
+            SimpleArgParser simpleArgParser = new SimpleArgParser(args, new CliFlag[] {
+                new CliFlag('s') { HasValue = false, Description = "Silent mode" },
+                new CliFlag('n'){ HasValue = true, Description = "Measured process name" },
+                new CliFlag('i') {HasValue  = false, Description = "Interactive mode"}
+            });
+
+            simpleArgParser.Report();
+            return;
             bool silent = false;
             int offset = 0;
             // Check that we have received the process filename.
@@ -124,7 +134,7 @@ namespace TimeIt
 
             // Wait until measured process exits.
             rootProcess.WaitForExit();
-            
+
             m_processTree.MeasureExecutionTimeOfTree();
 
             //foreach (var sp in m_processTree)
@@ -146,7 +156,7 @@ namespace TimeIt
             //}
 
             {
-                string times = m_processTree.GetOverallTreeTime().FormatProcessTimes()
+                string times = m_processTree.GetOverallTreeTime().FormatProcessTimes();
                 StringBuilder logBuilder = new StringBuilder();
                 logBuilder.Append(processFile).Append(' ').Append(arguments).Append('\n');
                 logBuilder.Append(times);

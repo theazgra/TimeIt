@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace TimeIt
+namespace TimeIt.ProcessUtils
 {
     internal class SubProcess
     {
