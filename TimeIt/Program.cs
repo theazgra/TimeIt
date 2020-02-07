@@ -67,12 +67,13 @@ namespace TimeIt
             StringBuilder logBuilder = new StringBuilder();
             logBuilder.Append(DateTime.Now.ToString("dd.MM.yyyy hh:mm:ss"))
                 .Append('\n')
-                .Append("Measured process: ").Append(measuredProcessName)
-                .Append("ProcessFile: ").Append(options.ProcessFile).Append(' ').Append(options.ProcessArguments)
+                .Append("Measured process: ").Append(measuredProcessName).Append('\n')
+                .Append("Command: ").Append(options.ProcessFile).Append(' ').Append(options.ProcessArguments)
                 .Append('\n')
                 .Append(times);
-            AppendToLogFile(logBuilder.ToString());
-            ColoredPrint(times, ConsoleColor.DarkGreen);
+            string report = logBuilder.ToString();
+            AppendToLogFile(report);
+            ColoredPrint(report, ConsoleColor.DarkGreen);
         }
 
         static void Main(string[] args)
