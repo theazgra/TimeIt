@@ -1,10 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
-using System.Management;
-using System.Runtime.InteropServices;
 using System.Text;
 using TimeIt.Cli;
 using TimeIt.ProcessUtils;
@@ -13,11 +9,6 @@ namespace TimeIt
 {
     class Program
     {
-        /// <summary>
-        /// Siletion options. If enabled, stdout and stderr won't be redirected.
-        /// </summary>
-        const string SilentOption = "-s";
-
         /// <summary>
         /// Console print lock. We synchronize stdout and stderr output because of diffrent foreground color.
         /// </summary>
@@ -32,7 +23,7 @@ namespace TimeIt
         /// Append message to the log file.
         /// </summary>
         /// <param name="msg">Message to append.</param>
-        static void WriteToLogFile(string msg)
+        static void AppendToLogFile(string msg)
         {
             string logFile = Path.Combine(Directory.GetCurrentDirectory(), "TimeItLog.txt");
             using (StreamWriter writer = new StreamWriter(logFile, true))
@@ -65,26 +56,27 @@ namespace TimeIt
             }
         }
 
-        static void ReportProcessTimes(ParsedOptions options, ProcessTimes pTimes)
+        /// <summary>
+        /// Report process time to console and append to log file.
+        /// </summary>
+        /// <param name="options">Parsed CLI options with process file and arguments.</param>
+        /// <param name="pTimes">Measured process times.</param>
+        static void ReportProcessTimes(ParsedOptions options, ProcessTimes pTimes, string measuredProcessName)
         {
             string times = pTimes.FormatProcessTimes();
             StringBuilder logBuilder = new StringBuilder();
-            logBuilder.Append(options.ProcessFile).Append(' ').Append(options.ProcessArguments).Append('\n');
-            logBuilder.Append(times);
-            WriteToLogFile(logBuilder.ToString());
+            logBuilder.Append(DateTime.Now.ToString("dd.MM.yyyy hh:mm:ss"))
+                .Append('\n')
+                .Append("Measured process: ").Append(measuredProcessName)
+                .Append("ProcessFile: ").Append(options.ProcessFile).Append(' ').Append(options.ProcessArguments)
+                .Append('\n')
+                .Append(times);
+            AppendToLogFile(logBuilder.ToString());
             ColoredPrint(times, ConsoleColor.DarkGreen);
         }
 
         static void Main(string[] args)
         {
-            SimpleArgParser simpleArgParser = new SimpleArgParser(args, new CliFlag[] {
-                new CliFlag('s') { HasValue = false, Description = "Silent mode" },
-                new CliFlag('n'){ HasValue = true, Description = "Measured process name" },
-                new CliFlag('v') {HasValue  = false, Description = "Report all subprocesses"}
-            });
-
-            ParsedOptions options = simpleArgParser.GetParsedOptions();
-
             // Check that we have received the process filename.
             if (args.Length < 1)
             {
@@ -92,7 +84,18 @@ namespace TimeIt
                 return;
             }
 
-            // Dont create new window and redirect outputs.
+            // Define cli options.
+            SimpleArgParser simpleArgParser = new SimpleArgParser(args, new CliFlag[] {
+                new CliFlag(CliFlag.SilentFlag) { HasValue = false, Description = "Silent mode" },
+                new CliFlag(CliFlag.ProcessNameFlag){ HasValue = true, Description = "Measured process name" },
+                new CliFlag(CliFlag.VerboseFlag) { HasValue  = false, Description = "Report all subprocesses"}
+            });
+
+            // Parse cli options.
+            ParsedOptions options = simpleArgParser.GetParsedOptions();
+
+
+            // Dont create new window and redirect outputs if silent is not defined.
             ProcessStartInfo startInfo = new ProcessStartInfo(options.ProcessFile, options.ProcessArguments)
             {
                 CreateNoWindow = true,
@@ -120,26 +123,29 @@ namespace TimeIt
                 rootProcess.BeginErrorReadLine();
             }
 
+            // Create process tree from root process.
             m_processTree = new ProcessTree(rootProcess);
 
             // Wait until measured process exits.
             rootProcess.WaitForExit();
 
+            // Measure execution time of all processes in the tree.
             m_processTree.MeasureExecutionTimeOfTree();
 
             if (options.Verbose)
             {
                 foreach (SubProcess subProcess in m_processTree)
                 {
-                    string times =  $"{subProcess.Name}\n{subProcess.Times.FormatProcessTimes()}";
+                    string times = $"{subProcess.Name}\n{subProcess.Times.FormatProcessTimes()}";
                     ColoredPrint(times, ConsoleColor.DarkGreen);
                 }
             }
             else if (options.HasMeasuredProcessName)
             {
+                // If user defined -n option report that process time.
                 if (m_processTree.TryGetMeasuredProcess(options.MeasuredProcessName, out ProcessTimes times))
                 {
-                    ReportProcessTimes(options, times);
+                    ReportProcessTimes(options, times, options.MeasuredProcessName);
                     return;
                 }
                 else
@@ -149,7 +155,7 @@ namespace TimeIt
                 }
             }
 
-            ReportProcessTimes(options, m_processTree.GetOverallTreeTime());
+            ReportProcessTimes(options, m_processTree.GetOverallTreeTime(), "TotalProcessTree");
         }
 
         private static void KillMeasuredProcess(object sender, ConsoleCancelEventArgs e)

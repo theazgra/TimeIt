@@ -8,6 +8,10 @@ namespace TimeIt.Cli
 {
     internal class CliFlag
     {
+        internal const char SilentFlag = 's';
+        internal const char VerboseFlag = 'v';
+        internal const char ProcessNameFlag = 'n';
+
         public bool HasValue { get; set; }
         public char Matcher { get; set; }
         public string Value { get; set; }

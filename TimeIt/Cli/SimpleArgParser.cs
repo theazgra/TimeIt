@@ -80,9 +80,9 @@ namespace TimeIt.Cli
             {
                 ProcessFile = this.ProcessFile,
                 ProcessArguments = this.ProcessArgumets,
-                Verbose = IsMatched('v'),
-                Silent = IsMatched('s'),
-                MeasuredProcessName = IsMatched('n') ? GetFlagValue<string>('n') : null
+                Verbose = IsMatched(CliFlag.VerboseFlag),
+                Silent = IsMatched(CliFlag.SilentFlag),
+                MeasuredProcessName = IsMatched(CliFlag.ProcessNameFlag) ? GetFlagValue<string>(CliFlag.ProcessNameFlag) : null
             };
             return options;
 
