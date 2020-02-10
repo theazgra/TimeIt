@@ -8,6 +8,6 @@
     <ProjectView>ProjectFiles</ProjectView>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|AnyCPU'">
-    <StartArguments>D:\codes\git\BigDataViewer\DataCompressor\out\artifacts\DataCompressor_jar\tmp.bat -bench -vq 3x3 -wc 8 -b 7 -cbc D:\biology\benchmark\dc_cache D:\biology\tiff_data\benchmark\fused_tp_10_ch_1_16bit.raw 1041x996x946 600-620</StartArguments>
+    <StartArguments>-h</StartArguments>
   </PropertyGroup>
 </Project>

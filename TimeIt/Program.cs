@@ -78,19 +78,33 @@ namespace TimeIt
 
         static void Main(string[] args)
         {
-            // Check that we have received the process filename.
-            if (args.Length < 1)
+            // Define cli options.
+            SimpleArgParser simpleArgParser = new SimpleArgParser(new CliFlag[] {
+                new CliFlag(CliFlag.SilentFlag) { HasValue = false, Description = "Silent mode" },
+                new CliFlag(CliFlag.ProcessNameFlag){ HasValue = true, Description = "Measured process name" },
+                new CliFlag(CliFlag.VerboseFlag) { HasValue  = false, Description = "Report all subprocesses"},
+                new CliFlag(CliFlag.HelpFlag) { HasValue  = false, Description = "Print help"}
+            });
+
+            if (!simpleArgParser.Parse(args))
             {
-                ColoredPrint("TimeIt.exe filename [arguments]", ConsoleColor.Red, true);
                 return;
             }
 
-            // Define cli options.
-            SimpleArgParser simpleArgParser = new SimpleArgParser(args, new CliFlag[] {
-                new CliFlag(CliFlag.SilentFlag) { HasValue = false, Description = "Silent mode" },
-                new CliFlag(CliFlag.ProcessNameFlag){ HasValue = true, Description = "Measured process name" },
-                new CliFlag(CliFlag.VerboseFlag) { HasValue  = false, Description = "Report all subprocesses"}
-            });
+            // Check that we have received the process filename.
+            if (args.Length < 1 || simpleArgParser.HasMatched(CliFlag.HelpFlag))
+            {
+                const string HelpText = "TimeIt.exe [options] command [command options]\n" +
+                                         "\nOptions:\n"+
+                                         "\t-s Silent mode (stdout and stderr aren't redirected.)\n" +
+                                         "\t-v Verbose mode (Print execution time of all processes.)\n" +
+                                         "\t-n Measured process name (Report execution time of this process.)\n" +
+                                         "\t-h Print help";
+                Console.WriteLine(HelpText);
+                return;
+            }
+
+
 
             // Parse cli options.
             ParsedOptions options = simpleArgParser.GetParsedOptions();

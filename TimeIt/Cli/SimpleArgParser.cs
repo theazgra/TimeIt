@@ -16,14 +16,19 @@ namespace TimeIt.Cli
         private string[] m_args;
         private List<CliFlag> m_matchedFlags;
         IEnumerable<CliFlag> m_possibleFlags;
-        internal SimpleArgParser(string[] args, IEnumerable<CliFlag> flags)
+        internal SimpleArgParser(IEnumerable<CliFlag> flags)
         {
-            m_args = args;
             m_possibleFlags = flags;
-            Parse();
         }
 
-        private bool Parse()
+        public bool Parse(string[] args)
+        {
+            m_args = args;
+            return InternalParse();
+        }
+
+
+        private bool InternalParse()
         {
             m_matchedFlags = new List<CliFlag>();
 
@@ -61,7 +66,7 @@ namespace TimeIt.Cli
             return true;
         }
 
-        internal bool IsMatched(char flagChar) => m_matchedFlags.Any(f => f.Match(flagChar));
+        internal bool HasMatched(char flagChar) => m_matchedFlags.Any(f => f.Match(flagChar));
         internal T GetFlagValue<T>(char flagChar) => (T)Convert.ChangeType(m_matchedFlags.SingleOrDefault(f => f.Match(flagChar))?.Value, typeof(T));
 
         internal void Report()
@@ -80,9 +85,9 @@ namespace TimeIt.Cli
             {
                 ProcessFile = this.ProcessFile,
                 ProcessArguments = this.ProcessArgumets,
-                Verbose = IsMatched(CliFlag.VerboseFlag),
-                Silent = IsMatched(CliFlag.SilentFlag),
-                MeasuredProcessName = IsMatched(CliFlag.ProcessNameFlag) ? GetFlagValue<string>(CliFlag.ProcessNameFlag) : null
+                Verbose = HasMatched(CliFlag.VerboseFlag),
+                Silent = HasMatched(CliFlag.SilentFlag),
+                MeasuredProcessName = HasMatched(CliFlag.ProcessNameFlag) ? GetFlagValue<string>(CliFlag.ProcessNameFlag) : null
             };
             return options;
 

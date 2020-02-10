@@ -10,6 +10,7 @@ namespace TimeIt.Cli
     {
         internal const char SilentFlag = 's';
         internal const char VerboseFlag = 'v';
+        internal const char HelpFlag = 'h';
         internal const char ProcessNameFlag = 'n';
 
         public bool HasValue { get; set; }
