@@ -17,18 +17,23 @@ namespace TimeIt.ProcessUtils
 
         private Process m_root;
 
+        /// <summary>
+        /// Flag whether this process tree is valid.
+        /// </summary>
+        public bool IsValid { get; }
+
         internal ProcessTree(Process rootProcess)
         {
             m_root = rootProcess;
-            FillProcessTree();
+            IsValid = FillProcessTree();
         }
 
         /// <summary>
         /// Recursively find all subprocesses of root process.
         /// </summary>
-        private void FillProcessTree()
+        private bool FillProcessTree()
         {
-            void AddSubprocess(int pid)
+            void AddSubprocess(int pid, ref bool addSubprocessFailed)
             {
                 using (ManagementObjectSearcher processSearcher = new ManagementObjectSearcher(string.Format(MOS_QUERY, pid)))
                 {
@@ -39,18 +44,29 @@ namespace TimeIt.ProcessUtils
                         int childProcessId = Convert.ToInt32(child["ProcessID"]);
 
                         // Recursively explore subprocess children.
-                        AddSubprocess(childProcessId);
+                        AddSubprocess(childProcessId, ref addSubprocessFailed);
                     }
 
                     // Find running process by pid.
-                    Process process = Process.GetProcessById(pid);
+                    Process process = null;
+                    try
+                    {
+                        process = Process.GetProcessById(pid);
+                    }
+                    catch (Exception e)
+                    {
+                        addSubprocessFailed = true;
+                        return;
+                    }
 
                     m_subProcesses.Add(new SubProcess(process));
                 }
             }
 
             m_subProcesses.Clear();
-            AddSubprocess(m_root.Id);
+            bool failed = false;
+            AddSubprocess(m_root.Id, ref failed);
+            return failed;
         }
 
         internal ProcessTimes GetOverallTreeTime()

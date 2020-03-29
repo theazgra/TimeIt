@@ -39,7 +39,7 @@ namespace TimeIt
         /// <param name="message">Message to print.</param>
         /// <param name="color">Foreground color.</param>
         /// <param name="error">True if write to stderr.</param>
-        static void ColoredPrint(string message, ConsoleColor color, bool error = false)
+        internal static void ColoredPrint(string message, ConsoleColor color, bool error = false)
         {
             var originalColor = Console.ForegroundColor;
             Console.ForegroundColor = color;
@@ -95,7 +95,7 @@ namespace TimeIt
             if (args.Length < 1 || simpleArgParser.HasMatched(CliFlag.HelpFlag))
             {
                 const string HelpText = "TimeIt.exe [options] command [command options]\n" +
-                                         "\nOptions:\n"+
+                                         "\nOptions:\n" +
                                          "\t-s Silent mode (stdout and stderr aren't redirected.)\n" +
                                          "\t-v Verbose mode (Print execution time of all processes.)\n" +
                                          "\t-n Measured process name (Report execution time of this process.)\n" +
@@ -143,6 +143,12 @@ namespace TimeIt
 
             // Wait until measured process exits.
             rootProcess.WaitForExit();
+
+            if (!m_processTree.IsValid)
+            {
+                ColoredPrint("Unable to query child processes.", ConsoleColor.Red, true);
+            }
+
 
             // Measure execution time of all processes in the tree.
             m_processTree.MeasureExecutionTimeOfTree();
