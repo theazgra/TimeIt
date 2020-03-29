@@ -147,6 +147,7 @@ namespace TimeIt
             if (!m_processTree.IsValid)
             {
                 ColoredPrint("Unable to query child processes.", ConsoleColor.Red, true);
+                return;
             }
 
 

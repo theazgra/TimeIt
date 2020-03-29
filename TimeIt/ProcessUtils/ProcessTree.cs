@@ -66,7 +66,7 @@ namespace TimeIt.ProcessUtils
             m_subProcesses.Clear();
             bool failed = false;
             AddSubprocess(m_root.Id, ref failed);
-            return failed;
+            return !failed;
         }
 
         internal ProcessTimes GetOverallTreeTime()
