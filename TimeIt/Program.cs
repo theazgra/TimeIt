@@ -130,7 +130,15 @@ namespace TimeIt
             rootProcess.ErrorDataReceived += PrintMeasuredProcessStderr;
 
             // Start the measured process and begin reading of stdout, stderr.
-            rootProcess.Start();
+            try
+            {
+                rootProcess.Start();
+            }
+            catch (Exception)
+            {
+                ColoredPrint($"Failed to start requested process. Process file: ({options.ProcessFile}) | Arguments: ({options.ProcessArguments})", ConsoleColor.Red, error: true);
+                return;
+            }
 
             if (!options.Silent)
             {
